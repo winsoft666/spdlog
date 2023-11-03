@@ -16,6 +16,20 @@
 #include <string>
 #include <type_traits>
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#ifndef _INC_WINDOWS
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  // !WIN32_LEAN_AND_MEAN
+#endif  // !_INC_WINDOWS
+
+#ifndef _WINSOCKAPI_
+#define _WINSOCKAPI_
+#endif  // !_WINSOCKAPI_
+
+#include <Windows.h>
+#endif
+
 #ifdef SPDLOG_USE_STD_FORMAT
     #include <version>
     #if __cpp_lib_format >= 202207L
@@ -106,11 +120,12 @@
 
 #ifdef SPDLOG_NO_EXCEPTIONS
     #define SPDLOG_TRY
-    #define SPDLOG_THROW(ex)                               \
-        do {                                               \
-            printf("spdlog fatal error: %s\n", ex.what()); \
-            std::abort();                                  \
-        } while (0)
+    // Always not throw exception
+    #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+            #define SPDLOG_THROW(ex) OutputDebugStringA(ex.what())
+    #else 
+            #define SPDLOG_THROW(ex) printf("spdlog fatal error: %s\n", ex.what())
+    #endif
     #define SPDLOG_CATCH_STD
 #else
     #define SPDLOG_TRY try
